@@ -24,19 +24,22 @@ The following has been succesfully compiled on FreeBSD:
 
 ## Clone
 
-Clone this repository recursively, so you get the foerked version of `JUCE`.
+Clone this repository recursively, so you get the forked version of `JUCE`.
+
 ```sh
 git clone --recursive https://github.com/tobanteAudio/juce-freebsd-example.git
 ```
+
 ## Dependencies
 
 - FreeBSD 12
 - C++17 compiler
+  - clang 6.0.1 & 8.0 tested
 - CMake
 
 ## Build
 
-You can build this project either with the included `Makefile` or calling `CMake` directly.
+You can build this project either with the included `Makefile`, or by calling `CMake` directly.
 
 ### Makefile
 
