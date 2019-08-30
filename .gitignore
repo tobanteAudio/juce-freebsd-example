@@ -1,0 +1,11 @@
+# editors
+.atom
+.idea
+.vs
+.vscode
+
+# build dirs
+build
+build-*
+build_*
+Builds

@@ -1,0 +1,184 @@
+From c49b5f25580a6d40ce7cee11c60cc14f4c76d81f Mon Sep 17 00:00:00 2001
+From: Tobias Hienzsch <post@tobias-hienzsch.de>
+Date: Wed, 28 Aug 2019 01:02:22 +0000
+Subject: [PATCH] Compile juce_core on FreeBSD
+
+---
+ modules/juce_core/juce_core.cpp               |  6 ++--
+ .../native/juce_BasicNativeHeaders.h          |  2 ++
+ modules/juce_core/native/juce_linux_Files.cpp | 10 ++++--
+ .../juce_core/native/juce_linux_Network.cpp   |  5 +++
+ .../native/juce_linux_SystemStats.cpp         | 33 +++++++++++++++----
+ .../juce_core/system/juce_TargetPlatform.h    |  2 +-
+ .../app_properties/juce_PropertiesFile.cpp    |  2 +-
+ 7 files changed, 45 insertions(+), 15 deletions(-)
+
+diff --git a/modules/juce_core/juce_core.cpp b/modules/juce_core/juce_core.cpp
+index 890cd3680..0af244d14 100755
+--- a/modules/juce_core/juce_core.cpp
++++ b/modules/juce_core/juce_core.cpp
+@@ -66,7 +66,7 @@
+  #endif
+ 
+ #else
+- #if JUCE_LINUX || JUCE_ANDROID
++ #if JUCE_LINUX || JUCE_ANDROID || JUCE_BSD
+   #include <sys/types.h>
+   #include <sys/socket.h>
+   #include <sys/errno.h>
+@@ -74,7 +74,7 @@
+   #include <netinet/in.h>
+  #endif
+ 
+- #if JUCE_LINUX
++ #if JUCE_LINUX || JUCE_BSD
+   #include <stdio.h>
+   #include <langinfo.h>
+   #include <ifaddrs.h>
+@@ -214,7 +214,7 @@
+  #include "native/juce_win32_Threads.cpp"
+ 
+ //==============================================================================
+-#elif JUCE_LINUX
++#elif JUCE_LINUX || JUCE_BSD
+  #include "native/juce_linux_CommonFile.cpp"
+  #include "native/juce_linux_Files.cpp"
+  #include "native/juce_linux_Network.cpp"
+diff --git a/modules/juce_core/native/juce_BasicNativeHeaders.h b/modules/juce_core/native/juce_BasicNativeHeaders.h
+index dc5d53c00..81eb98f1b 100644
+--- a/modules/juce_core/native/juce_BasicNativeHeaders.h
++++ b/modules/juce_core/native/juce_BasicNativeHeaders.h
+@@ -250,6 +250,8 @@
+  #include <errno.h>
+  #include <fcntl.h>
+  #include <fnmatch.h>
++ #include <ifaddrs.h>
++ #include <langinfo.h>
+  #include <net/if.h>
+  #include <netdb.h>
+  #include <netinet/in.h>
+diff --git a/modules/juce_core/native/juce_linux_Files.cpp b/modules/juce_core/native/juce_linux_Files.cpp
+index c51a97e6a..1ce9b8656 100644
+--- a/modules/juce_core/native/juce_linux_Files.cpp
++++ b/modules/juce_core/native/juce_linux_Files.cpp
+@@ -215,9 +215,13 @@ bool Process::openDocument (const String& fileName, const String& parameters)
+     {
+         setsid();
+ 
+-        // Child process
+-        execve (argv[0], (char**) argv, environ);
+-        exit (0);
++        #if JUCE_BSD
++            // TODO:
++        #else
++            // Child process
++            execve (argv[0], (char**) argv, environ);
++            exit (0);
++        #endif
+     }
+ 
+     return cpid >= 0;
+diff --git a/modules/juce_core/native/juce_linux_Network.cpp b/modules/juce_core/native/juce_linux_Network.cpp
+index 5ec418656..3bc11e9c8 100644
+--- a/modules/juce_core/native/juce_linux_Network.cpp
++++ b/modules/juce_core/native/juce_linux_Network.cpp
+@@ -25,6 +25,10 @@ namespace juce
+ 
+ void MACAddress::findAllAddresses (Array<MACAddress>& result)
+ {
++   #if JUCE_BSD
++    return;
++   #else // JUCE_LINUX
++
+     auto s = socket (AF_INET, SOCK_DGRAM, 0);
+ 
+     if (s != -1)
+@@ -53,6 +57,7 @@ void MACAddress::findAllAddresses (Array<MACAddress>& result)
+ 
+         ::close (s);
+     }
++  #endif // JUCE_BSD
+ }
+ 
+ 
+diff --git a/modules/juce_core/native/juce_linux_SystemStats.cpp b/modules/juce_core/native/juce_linux_SystemStats.cpp
+index 8d553e495..f8f4a8ff1 100755
+--- a/modules/juce_core/native/juce_linux_SystemStats.cpp
++++ b/modules/juce_core/native/juce_linux_SystemStats.cpp
+@@ -88,12 +88,15 @@ int SystemStats::getCpuSpeedInMegahertz()
+ 
+ int SystemStats::getMemorySizeInMegabytes()
+ {
+-    struct sysinfo sysi;
++    #if JUCE_BSD
++        return 0; // TODO:
++    #else
++        struct sysinfo sysi;
++        if (sysinfo (&sysi) == 0)
++            return (int) (sysi.totalram * sysi.mem_unit / (1024 * 1024));
+ 
+-    if (sysinfo (&sysi) == 0)
+-        return (int) (sysi.totalram * sysi.mem_unit / (1024 * 1024));
+-
+-    return 0;
++        return 0;
++    #endif // JUCE_BSD
+ }
+ 
+ int SystemStats::getPageSize()
+@@ -136,8 +139,24 @@ static String getLocaleValue (nl_item key)
+     return result;
+ }
+ 
+-String SystemStats::getUserLanguage()     { return getLocaleValue (_NL_IDENTIFICATION_LANGUAGE); }
+-String SystemStats::getUserRegion()       { return getLocaleValue (_NL_IDENTIFICATION_TERRITORY); }
++String SystemStats::getUserLanguage()
++{
++    #if JUCE_BSD
++        return ""; // TODO:
++    #else
++        return getLocaleValue (_NL_IDENTIFICATION_LANGUAGE);
++    #endif
++}
++
++String SystemStats::getUserRegion()
++{
++    #if JUCE_BSD
++        return ""; // TODO:
++    #else
++        return getLocaleValue (_NL_IDENTIFICATION_TERRITORY);
++    #endif
++}
++
+ String SystemStats::getDisplayLanguage()  { return getUserLanguage() + "-" + getUserRegion(); }
+ 
+ //==============================================================================
+diff --git a/modules/juce_core/system/juce_TargetPlatform.h b/modules/juce_core/system/juce_TargetPlatform.h
+index 4b9228d99..638a76d38 100644
+--- a/modules/juce_core/system/juce_TargetPlatform.h
++++ b/modules/juce_core/system/juce_TargetPlatform.h
+@@ -152,7 +152,7 @@
+ #endif
+ 
+ //==============================================================================
+-#if JUCE_LINUX || JUCE_ANDROID
++#if JUCE_LINUX || JUCE_ANDROID || JUCE_BSD
+ 
+   #ifdef _DEBUG
+     #define JUCE_DEBUG 1
+diff --git a/modules/juce_data_structures/app_properties/juce_PropertiesFile.cpp b/modules/juce_data_structures/app_properties/juce_PropertiesFile.cpp
+index 39b85dc6a..41ecee0da 100644
+--- a/modules/juce_data_structures/app_properties/juce_PropertiesFile.cpp
++++ b/modules/juce_data_structures/app_properties/juce_PropertiesFile.cpp
+@@ -90,7 +90,7 @@ File PropertiesFile::Options::getDefaultFile() const
+     if (folderName.isNotEmpty())
+         dir = dir.getChildFile (folderName);
+ 
+-   #elif JUCE_LINUX || JUCE_ANDROID
++   #elif JUCE_LINUX || JUCE_ANDROID || JUCE_BSD
+     auto dir = File (commonToAllUsers ? "/var" : "~")
+                       .getChildFile (folderName.isNotEmpty() ? folderName
+                                                              : ("." + applicationName));
+-- 
+2.22.0
+

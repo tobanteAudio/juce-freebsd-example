@@ -1,0 +1,4 @@
+add_library(compiler_options INTERFACE)
+add_library(tobanteAudio::CompilerOptions ALIAS compiler_options)
+
+target_compile_features(compiler_options INTERFACE cxx_std_17)
