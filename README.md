@@ -9,10 +9,17 @@ Tests projects for my fork/port of `JUCE` to FreeBSD.
 
 The following has been succesfully compiled on FreeBSD:
 
+- juce_audio_basics
+- juce_audio_formats
 - juce_core
 - juce_data_structures
+- juce_dsp
+- juce_events
 
 ## What's not working?
+
+- `DBG()` macro
+    - Using this macro in a debug build crashes the build.
 
 - juce_core
     - `sys/timeb.h` deprecated since FreeBSD 11.1
