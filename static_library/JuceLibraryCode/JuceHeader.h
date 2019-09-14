@@ -20,7 +20,6 @@
 #include <juce_data_structures/juce_data_structures.h>
 #include <juce_dsp/juce_dsp.h>
 #include <juce_events/juce_events.h>
-#include <mc_juce_dsp/mc_juce_dsp.hpp>
 
 
 #if ! DONT_SET_USING_JUCE_NAMESPACE
