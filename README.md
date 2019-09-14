@@ -2,8 +2,8 @@
 
 Tests projects for my fork/port of `JUCE` to FreeBSD.
 
-- Fork: [tobanteAudio/JUCE](https://github.com/tobanteAudio/JUCE)
-- Original: [WeAreROLI/JUCE](https://github.com/WeAreROLI/JUCE)
+- Fork: [tobanteAudio/JUCE](https://github.com/tobanteAudio/JUCE/tree/develop)
+- Original: [WeAreROLI/JUCE](https://github.com/WeAreROLI/JUCE/tree/develop)
 
 ## What's working?
 
@@ -35,29 +35,18 @@ git clone --recursive https://github.com/tobanteAudio/juce-freebsd-example.git
 - FreeBSD 12
 - C++17 compiler
   - clang 6.0.1 & 8.0 tested
-- CMake
+- gmake
 
 ```sh
-sudo pkg install cmake freetype2 alsa-lib pkgconf gtk3
+sudo pkg install gmake freetype2 alsa-lib pkgconf gtk3
 ```
 
 ## Build
 
-You can build this project either with the included `Makefile`, or by calling `CMake` directly.
-
-### Makefile
+Each example project can be build using `gmake`:
 
 ```sh
-cd $PROJECT_ROOT
-make debug
-make clean
-```
-
-### CMake
-
-```sh
-cd $PROJECT_ROOT
-mkdir build && cd build
-cmake ..
-cmake --build .
+cd $PROJECT_ROOT/console_app
+gmake
+gmake clean
 ```
