@@ -42,18 +42,17 @@ git clone --recursive https://github.com/tobanteAudio/juce-freebsd-example.git
 - FreeBSD 12
 - C++17 compiler
   - clang 6.0.1 & 8.0 tested
-- gmake
 
 ```sh
-sudo pkg install gmake freetype2 alsa-lib pkgconf gtk3
+sudo pkg install freetype2 alsa-lib pkgconf gtk3
 ```
 
 ## Build
 
-Each example project can be build using `gmake`:
+Each example project can be build using `make` (native BSD make, not GNU make):
 
 ```sh
 cd $PROJECT_ROOT/console_app
-gmake
-gmake clean
+make
+make clean
 ```
