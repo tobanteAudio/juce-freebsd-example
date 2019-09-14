@@ -37,6 +37,10 @@ git clone --recursive https://github.com/tobanteAudio/juce-freebsd-example.git
   - clang 6.0.1 & 8.0 tested
 - CMake
 
+```sh
+sudo pkg install cmake freetype2 alsa-lib pkgconf gtk3
+```
+
 ## Build
 
 You can build this project either with the included `Makefile`, or by calling `CMake` directly.
