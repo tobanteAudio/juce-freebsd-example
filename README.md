@@ -49,13 +49,18 @@ sudo pkg install freetype2 alsa-lib pkgconf gtk3
 
 ## Build
 
-Each example project can be build using `make` (native BSD make, not GNU make):
+Each example project can be build using `make`. Native BSD make, not GNU make. See [here](http://alfix.gitlab.io/bsd/gnu/coding/2017/01/28/gnu-make-vs-bsd-make.html) for basic differences:
 
 ```sh
 cd $PROJECT_ROOT/console_app
 # or
-cd $PROJECT_ROOT/console_app
 cd $PROJECT_ROOT/gui_app
-make
+
+make -j4
 make clean
 ```
+
+## Development
+
+- [Setup git remote for upstream](https://help.github.com/en/articles/configuring-a-remote-for-a-fork)
+- [Update fork form upstream](https://help.github.com/en/articles/syncing-a-fork)
