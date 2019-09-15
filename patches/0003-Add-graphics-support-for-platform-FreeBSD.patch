@@ -1,0 +1,261 @@
+From ca3d6bf1c54bfaf34880d6029ec390e045425ba3 Mon Sep 17 00:00:00 2001
+From: Tobias Hienzsch <post@tobias-hienzsch.de>
+Date: Sun, 15 Sep 2019 01:46:00 +0000
+Subject: [PATCH] Add graphics support for platform FreeBSD
+
+---
+ modules/juce_core/files/juce_File.cpp                     | 4 ++--
+ modules/juce_core/native/juce_posix_SharedCode.h          | 4 ++--
+ modules/juce_graphics/images/juce_Image.cpp               | 2 +-
+ modules/juce_graphics/juce_graphics.cpp                   | 4 ++--
+ modules/juce_gui_basics/components/juce_Component.cpp     | 2 +-
+ modules/juce_gui_basics/juce_gui_basics.cpp               | 8 ++++----
+ modules/juce_gui_basics/juce_gui_basics.h                 | 2 +-
+ modules/juce_gui_basics/lookandfeel/juce_LookAndFeel.cpp  | 2 +-
+ .../juce_gui_basics/native/juce_linux_X11_Windowing.cpp   | 2 ++
+ modules/juce_gui_extra/embedding/juce_XEmbedComponent.h   | 2 +-
+ modules/juce_gui_extra/juce_gui_extra.cpp                 | 4 ++--
+ .../juce_gui_extra/misc/juce_SystemTrayIconComponent.cpp  | 2 +-
+ .../juce_gui_extra/misc/juce_SystemTrayIconComponent.h    | 4 ++--
+ 13 files changed, 22 insertions(+), 20 deletions(-)
+
+diff --git a/modules/juce_core/files/juce_File.cpp b/modules/juce_core/files/juce_File.cpp
+index 70f87f594..a33ba4eb2 100644
+--- a/modules/juce_core/files/juce_File.cpp
++++ b/modules/juce_core/files/juce_File.cpp
+@@ -211,7 +211,7 @@ String File::addTrailingSeparator (const String& path)
+ }
+ 
+ //==============================================================================
+-#if JUCE_LINUX
++#if JUCE_LINUX || JUCE_BSD
+  #define NAMES_ARE_CASE_SENSITIVE 1
+ #endif
+ 
+@@ -953,7 +953,7 @@ bool File::createSymbolicLink (const File& linkFileToCreate,
+             linkFileToCreate.deleteFile();
+     }
+ 
+-   #if JUCE_MAC || JUCE_LINUX
++   #if JUCE_MAC || JUCE_LINUX || JUCE_BSD
+     // one common reason for getting an error here is that the file already exists
+     if (symlink (nativePathOfTarget.toRawUTF8(), linkFileToCreate.getFullPathName().toRawUTF8()) == -1)
+     {
+diff --git a/modules/juce_core/native/juce_posix_SharedCode.h b/modules/juce_core/native/juce_posix_SharedCode.h
+index e035a107a..fbe555fc8 100644
+--- a/modules/juce_core/native/juce_posix_SharedCode.h
++++ b/modules/juce_core/native/juce_posix_SharedCode.h
+@@ -342,7 +342,7 @@ uint64 File::getFileIdentifier() const
+ 
+ static bool hasEffectiveRootFilePermissions()
+ {
+-   #if JUCE_LINUX
++   #if JUCE_LINUX || JUCE_BSD
+     return geteuid() == 0;
+    #else
+     return false;
+@@ -1312,7 +1312,7 @@ struct HighResolutionTimer::Pimpl
+         pthread_condattr_t attr;
+         pthread_condattr_init (&attr);
+ 
+-       #if JUCE_LINUX || (JUCE_ANDROID && defined(__ANDROID_API__) && __ANDROID_API__ >= 21)
++       #if JUCE_LINUX || (JUCE_ANDROID && defined(__ANDROID_API__) && __ANDROID_API__ >= 21) || JUCE_BSD
+         pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
+        #endif
+ 
+diff --git a/modules/juce_graphics/images/juce_Image.cpp b/modules/juce_graphics/images/juce_Image.cpp
+index b3ac8fe8f..194eb05ed 100644
+--- a/modules/juce_graphics/images/juce_Image.cpp
++++ b/modules/juce_graphics/images/juce_Image.cpp
+@@ -145,7 +145,7 @@ int NativeImageType::getTypeID() const
+     return 1;
+ }
+ 
+-#if JUCE_WINDOWS || JUCE_LINUX
++#if JUCE_WINDOWS || JUCE_LINUX || JUCE_BSD
+ ImagePixelData::Ptr NativeImageType::create (Image::PixelFormat format, int width, int height, bool clearImage) const
+ {
+     return new SoftwarePixelData (format, width, height, clearImage);
+diff --git a/modules/juce_graphics/juce_graphics.cpp b/modules/juce_graphics/juce_graphics.cpp
+index baed232ab..de83159ba 100644
+--- a/modules/juce_graphics/juce_graphics.cpp
++++ b/modules/juce_graphics/juce_graphics.cpp
+@@ -85,7 +85,7 @@
+   #error "JUCE no longer supports targets earlier than iOS 3.2"
+  #endif
+ 
+-#elif JUCE_LINUX
++#elif JUCE_LINUX || JUCE_BSD
+  #ifndef JUCE_USE_FREETYPE
+   #define JUCE_USE_FREETYPE 1
+  #endif
+@@ -157,7 +157,7 @@
+   #include "native/juce_win32_Direct2DGraphicsContext.cpp"
+  #endif
+ 
+-#elif JUCE_LINUX
++#elif JUCE_LINUX || JUCE_BSD
+  #include "native/juce_linux_Fonts.cpp"
+  #include "native/juce_linux_IconHelpers.cpp"
+ 
+diff --git a/modules/juce_gui_basics/components/juce_Component.cpp b/modules/juce_gui_basics/components/juce_Component.cpp
+index 1a2106a4c..d5afe336c 100644
+--- a/modules/juce_gui_basics/components/juce_Component.cpp
++++ b/modules/juce_gui_basics/components/juce_Component.cpp
+@@ -610,7 +610,7 @@ void Component::addToDesktop (int styleWanted, void* nativeWindowToAttachTo)
+     {
+         const WeakReference<Component> safePointer (this);
+ 
+-       #if JUCE_LINUX
++       #if JUCE_LINUX || JUCE_BSD
+         // it's wise to give the component a non-zero size before
+         // putting it on the desktop, as X windows get confused by this, and
+         // a (1, 1) minimum size is enforced here.
+diff --git a/modules/juce_gui_basics/juce_gui_basics.cpp b/modules/juce_gui_basics/juce_gui_basics.cpp
+index 478dd37f7..904de2907 100644
+--- a/modules/juce_gui_basics/juce_gui_basics.cpp
++++ b/modules/juce_gui_basics/juce_gui_basics.cpp
+@@ -93,7 +93,7 @@
+  #endif
+ 
+ //==============================================================================
+-#elif JUCE_LINUX
++#elif JUCE_LINUX || JUCE_BSD
+  #include <X11/Xlib.h>
+  #include <X11/Xatom.h>
+  #include <X11/Xresource.h>
+@@ -114,11 +114,11 @@
+   #include <X11/extensions/Xinerama.h>
+  #endif
+ 
+- #if JUCE_USE_XSHM
++ //#if JUCE_USE_XSHM
+   #include <X11/extensions/XShm.h>
+   #include <sys/shm.h>
+   #include <sys/ipc.h>
+- #endif
++// #endif
+ 
+  #if JUCE_USE_XRENDER
+   // If you're missing these headers, try installing the libxrender-dev and libxcomposite-dev
+@@ -306,7 +306,7 @@ namespace juce
+  #include "native/juce_win32_DragAndDrop.cpp"
+  #include "native/juce_win32_FileChooser.cpp"
+ 
+-#elif JUCE_LINUX
++#elif JUCE_LINUX || JUCE_BSD
+  #include "native/juce_linux_X11.cpp"
+  #include "native/juce_linux_X11_Clipboard.cpp"
+ 
+diff --git a/modules/juce_gui_basics/juce_gui_basics.h b/modules/juce_gui_basics/juce_gui_basics.h
+index 2e6a9dcdc..2182ef92d 100644
+--- a/modules/juce_gui_basics/juce_gui_basics.h
++++ b/modules/juce_gui_basics/juce_gui_basics.h
+@@ -297,7 +297,7 @@ namespace juce
+ #include "lookandfeel/juce_LookAndFeel_V4.h"
+ #include "mouse/juce_LassoComponent.h"
+ 
+-#if JUCE_LINUX
++#if JUCE_LINUX || JUCE_BSD
+  #include "native/juce_linux_X11.h"
+ #endif
+ 
+diff --git a/modules/juce_gui_basics/lookandfeel/juce_LookAndFeel.cpp b/modules/juce_gui_basics/lookandfeel/juce_LookAndFeel.cpp
+index d75790179..20ebbfab7 100644
+--- a/modules/juce_gui_basics/lookandfeel/juce_LookAndFeel.cpp
++++ b/modules/juce_gui_basics/lookandfeel/juce_LookAndFeel.cpp
+@@ -183,7 +183,7 @@ void LookAndFeel::setUsingNativeAlertWindows (bool shouldUseNativeAlerts)
+ 
+ bool LookAndFeel::isUsingNativeAlertWindows()
+ {
+-   #if JUCE_LINUX
++   #if JUCE_LINUX || JUCE_BSD
+     return false; // not available currently..
+    #else
+     return useNativeAlertWindows;
+diff --git a/modules/juce_gui_basics/native/juce_linux_X11_Windowing.cpp b/modules/juce_gui_basics/native/juce_linux_X11_Windowing.cpp
+index 40e5e1ccd..6362fe788 100644
+--- a/modules/juce_gui_basics/native/juce_linux_X11_Windowing.cpp
++++ b/modules/juce_gui_basics/native/juce_linux_X11_Windowing.cpp
+@@ -24,6 +24,8 @@
+   ==============================================================================
+ */
+ 
++#include <array>
++
+ namespace juce
+ {
+ 
+diff --git a/modules/juce_gui_extra/embedding/juce_XEmbedComponent.h b/modules/juce_gui_extra/embedding/juce_XEmbedComponent.h
+index 9d431c655..54256294b 100644
+--- a/modules/juce_gui_extra/embedding/juce_XEmbedComponent.h
++++ b/modules/juce_gui_extra/embedding/juce_XEmbedComponent.h
+@@ -32,7 +32,7 @@ bool juce_handleXEmbedEvent (ComponentPeer*, void*);
+ /** @internal */
+ unsigned long juce_getCurrentFocusWindow (ComponentPeer*);
+ 
+-#if JUCE_LINUX || DOXYGEN
++#if JUCE_LINUX || JUCE_BSD || DOXYGEN
+ 
+ //==============================================================================
+ /**
+diff --git a/modules/juce_gui_extra/juce_gui_extra.cpp b/modules/juce_gui_extra/juce_gui_extra.cpp
+index 3be2cad49..ae706c67d 100644
+--- a/modules/juce_gui_extra/juce_gui_extra.cpp
++++ b/modules/juce_gui_extra/juce_gui_extra.cpp
+@@ -89,7 +89,7 @@
+  #endif
+ 
+ //==============================================================================
+-#elif JUCE_LINUX
++#elif JUCE_LINUX || JUCE_BSD
+  #include <X11/Xlib.h>
+  #include <X11/Xatom.h>
+  #include <X11/Xutil.h>
+@@ -187,7 +187,7 @@
+  #include "native/juce_win32_SystemTrayIcon.cpp"
+ 
+ //==============================================================================
+-#elif JUCE_LINUX
++#elif JUCE_LINUX || JUCE_BSD
+  #if JUCE_GCC
+   #pragma GCC diagnostic push
+   #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+diff --git a/modules/juce_gui_extra/misc/juce_SystemTrayIconComponent.cpp b/modules/juce_gui_extra/misc/juce_SystemTrayIconComponent.cpp
+index 72c6c983f..f79249482 100644
+--- a/modules/juce_gui_extra/misc/juce_SystemTrayIconComponent.cpp
++++ b/modules/juce_gui_extra/misc/juce_SystemTrayIconComponent.cpp
+@@ -27,7 +27,7 @@
+ namespace juce
+ {
+ 
+-#if JUCE_WINDOWS || JUCE_LINUX || JUCE_MAC
++#if JUCE_WINDOWS || JUCE_LINUX || JUCE_MAC || JUCE_BSD
+ 
+ SystemTrayIconComponent::SystemTrayIconComponent()
+ {
+diff --git a/modules/juce_gui_extra/misc/juce_SystemTrayIconComponent.h b/modules/juce_gui_extra/misc/juce_SystemTrayIconComponent.h
+index c905c6f18..da36fb48f 100644
+--- a/modules/juce_gui_extra/misc/juce_SystemTrayIconComponent.h
++++ b/modules/juce_gui_extra/misc/juce_SystemTrayIconComponent.h
+@@ -27,7 +27,7 @@
+ namespace juce
+ {
+ 
+-#if JUCE_WINDOWS || JUCE_LINUX || JUCE_MAC || DOXYGEN
++#if JUCE_WINDOWS || JUCE_LINUX || JUCE_MAC || JUCE_BSD || DOXYGEN
+ 
+ 
+ //==============================================================================
+@@ -92,7 +92,7 @@ public:
+     */
+     void* getNativeHandle() const;
+ 
+-   #if JUCE_LINUX
++   #if JUCE_LINUX || JUCE_BSD
+     /** @internal */
+     void paint (Graphics&) override;
+    #endif
+-- 
+2.22.0
+
