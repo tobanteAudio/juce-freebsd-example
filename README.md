@@ -53,6 +53,9 @@ Each example project can be build using `make` (native BSD make, not GNU make):
 
 ```sh
 cd $PROJECT_ROOT/console_app
+# or
+cd $PROJECT_ROOT/console_app
+cd $PROJECT_ROOT/gui_app
 make
 make clean
 ```

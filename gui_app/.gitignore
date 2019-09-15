@@ -1,0 +1,4 @@
+Builds
+app
+*.out
+*.o
